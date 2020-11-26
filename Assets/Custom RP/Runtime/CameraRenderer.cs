@@ -90,7 +90,8 @@ public partial class CameraRenderer
             unlitShaderTagId, sortingSettings
         ) {
             enableDynamicBatching = useDynamicBatching,
-            enableInstancing = useGPUInstancing
+            enableInstancing = useGPUInstancing,
+            perObjectData = PerObjectData.Lightmaps
         };
         drawingSettings.SetShaderPassName(1, litShaderTag);
         var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
