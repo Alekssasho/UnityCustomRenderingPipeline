@@ -1,24 +1,12 @@
 ﻿#ifndef CUSTOM_LIT_PASS_INCLUDED
 #define CUSTOM_LIT_PASS_INCLUDED
 
-#include "../ShaderLibrary/Common.hlsl"
 #include "../ShaderLibrary/Surface.hlsl"
 #include "../ShaderLibrary/Shadows.hlsl"
 #include "../ShaderLibrary/Light.hlsl"
 #include "../ShaderLibrary/BRDF.hlsl"
 #include "../ShaderLibrary/GI.hlsl"
 #include "../ShaderLibrary/Lighting.hlsl"
-
-TEXTURE2D(_BaseMap);
-SAMPLER(sampler_BaseMap);
-
-UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
-	UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
-	UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
-	UNITY_DEFINE_INSTANCED_PROP(float, _Cutoff)
-	UNITY_DEFINE_INSTANCED_PROP(float, _Metallic)
-	UNITY_DEFINE_INSTANCED_PROP(float, _Smoothness)
-UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
 
 struct Attributes
 {
@@ -50,19 +38,16 @@ Varyings LitPassVertex(Attributes input)
 	output.positionCS = TransformWorldToHClip(output.positionWS);
 	output.normalWS = TransformObjectToWorldNormal(input.normalOS);
 	
-	float4 baseST = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseMap_ST);
-	output.baseUV = input.baseUV * baseST.xy + baseST.zw;
+	output.baseUV = TransformBaseUV(input.baseUV);
 	return output;
 }
 
 float4 LitPassFragment(Varyings input) : SV_TARGET
 {
 	UNITY_SETUP_INSTANCE_ID(input);
-	float4 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
-	float4 baseMap = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.baseUV);
-	float4 base = baseMap * baseColor;
+	float4 base = GetBase(input.baseUV);
 #if defined(_CLIPPING)
-	clip(base.a - UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff));
+	clip(base.a - GetCutoff(input.baseUV));
 #endif
 
 	Surface surface;
@@ -72,8 +57,8 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	surface.depth = -TransformWorldToView(input.positionWS).z;
 	surface.color = base.rgb;
 	surface.alpha = base.a;
-	surface.metallic = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Metallic);
-	surface.smoothness = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Smoothness);
+	surface.metallic = GetMetallic(input.baseUV);
+	surface.smoothness = GetSmoothness(input.baseUV);
 	surface.dither = InterleavedGradientNoise(input.positionCS.xy, 0);
 #if defined(_PREMULTIPLY_ALPHA)
 	BRDF brdf = GetBRDF(surface, true);
@@ -81,7 +66,7 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	BRDF brdf = GetBRDF(surface);
 #endif
 
-	GI gi = GetGI(GI_FRAGMENT_DATA(input));
+	GI gi = GetGI(GI_FRAGMENT_DATA(input), surface);
 	float3 color = GetLighting(surface, brdf, gi);
 
 	return float4(color, surface.alpha);
