@@ -11,6 +11,9 @@
 #define UNITY_MATRIX_VP unity_MatrixVP
 #define UNITY_MATRIX_P glstate_matrix_projection
 
+#if defined(_SHADOW_MASK_ALWAYS) || defined(_SHADOW_MASK_DISTANCE)
+	#define SHADOWS_SHADOWMASK
+#endif
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"
 
@@ -22,6 +25,14 @@ float Square(float v)
 float DistanceSquared(float3 pA, float3 pB)
 {
 	return dot(pA - pB, pA - pB);
+}
+
+void ClipLOD(float2 positioncCS, float fade)
+{
+#if defined(LOD_FADE_CROSSFADE)
+	float dither = InterleavedGradientNoise(positioncCS.xy, 0);
+	clip(fade + (fade < 0.0f ? dither : -dither));
+#endif
 }
 
 #endif
