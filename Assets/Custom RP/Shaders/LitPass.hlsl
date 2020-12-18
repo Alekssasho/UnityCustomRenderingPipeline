@@ -59,7 +59,9 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	surface.color = base.rgb;
 	surface.alpha = base.a;
 	surface.metallic = GetMetallic(input.baseUV);
+	surface.occlusion = GetOcclusion(input.baseUV);
 	surface.smoothness = GetSmoothness(input.baseUV);
+	surface.fresnelStrength = GetFresnel(input.baseUV);
 	surface.dither = InterleavedGradientNoise(input.positionCS.xy, 0);
 #if defined(_PREMULTIPLY_ALPHA)
 	BRDF brdf = GetBRDF(surface, true);
@@ -67,7 +69,7 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	BRDF brdf = GetBRDF(surface);
 #endif
 
-	GI gi = GetGI(GI_FRAGMENT_DATA(input), surface);
+	GI gi = GetGI(GI_FRAGMENT_DATA(input), surface, brdf);
 	float3 color = GetLighting(surface, brdf, gi);
 	color += GetEmission(input.baseUV);
 	return float4(color, surface.alpha);
