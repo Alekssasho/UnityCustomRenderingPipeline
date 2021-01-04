@@ -1,28 +1,31 @@
 ﻿using UnityEngine;
 using UnityEngine.Rendering;
 
-public class CustomRenderPipeline : RenderPipeline
+public partial class CustomRenderPipeline : RenderPipeline
 {
     CameraRenderer renderer = new CameraRenderer();
-    bool useDynamicBatching, useGPUinstancing;
+    bool useDynamicBatching, useGPUinstancing, useLightsPerObject;
     ShadowSettings shadowSettings;
 
     public CustomRenderPipeline(
         bool useDynamicBatching, bool useGPUinstancing, bool useSRPBatcher,
-        ShadowSettings shadowSettings
+        bool useLightsPerObject, ShadowSettings shadowSettings
     ) {
         this.useDynamicBatching = useDynamicBatching;
         this.useGPUinstancing = useGPUinstancing;
         this.shadowSettings = shadowSettings;
+        this.useLightsPerObject = useLightsPerObject;
         GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
         GraphicsSettings.lightsUseLinearIntensity = true;
+
+        InitializeForEditor();
     }
 
     protected override void Render(ScriptableRenderContext context, Camera[] cameras)
     {
         foreach (Camera camera in cameras)
         {
-            renderer.Render(context, camera, useDynamicBatching, useGPUinstancing,
+            renderer.Render(context, camera, useDynamicBatching, useGPUinstancing, useLightsPerObject,
                 shadowSettings);
         }
     }
