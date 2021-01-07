@@ -13,6 +13,18 @@
 
 		Pass
 		{
+			Name "Bloom Add"
+
+			HLSLPROGRAM
+#pragma target 3.5
+//#pragma enable_d3d11_debug_symbols
+#pragma vertex DefaultPassVertex
+#pragma fragment BloomAddPassFragment
+			ENDHLSL
+		}
+
+		Pass
+		{
 			Name "Bloom Horizontal"
 
 			HLSLPROGRAM
@@ -35,17 +47,7 @@
 			ENDHLSL
 		}
 
-		Pass
-		{
-			Name "Bloom Combine"
 
-			HLSLPROGRAM
-#pragma target 3.5
-//#pragma enable_d3d11_debug_symbols
-#pragma vertex DefaultPassVertex
-#pragma fragment BloomCombinePassFragment
-			ENDHLSL
-		}
 
 		Pass
 		{
@@ -62,6 +64,43 @@
 
 		Pass
 		{
+			Name "Bloom Prefilter Fireflies"
+
+			HLSLPROGRAM
+#pragma target 3.5
+//#pragma enable_d3d11_debug_symbols
+#pragma vertex DefaultPassVertex
+#pragma fragment BloomPrefilterFirefliesPassFragment
+			ENDHLSL
+		}
+
+		Pass
+		{
+			Name "Bloom Scatter"
+
+			HLSLPROGRAM
+#pragma target 3.5
+//#pragma enable_d3d11_debug_symbols
+#pragma vertex DefaultPassVertex
+#pragma fragment BloomScatterPassFragment
+			ENDHLSL
+		}
+
+		Pass
+		{
+			Name "Bloom Scatter Final"
+
+			HLSLPROGRAM
+#pragma target 3.5
+//#pragma enable_d3d11_debug_symbols
+#pragma vertex DefaultPassVertex
+#pragma fragment BloomScatterFinalPassFragment
+			ENDHLSL
+		}
+
+
+		Pass
+		{
 			Name "Copy"
 
 			HLSLPROGRAM
@@ -69,6 +108,43 @@
 //#pragma enable_d3d11_debug_symbols
 #pragma vertex DefaultPassVertex
 #pragma fragment CopyPassFragment
+			ENDHLSL
+		}
+
+		Pass
+		{
+			Name "Tone Mapping ACES"
+
+			HLSLPROGRAM
+#pragma target 3.5
+//#pragma enable_d3d11_debug_symbols
+#pragma vertex DefaultPassVertex
+#pragma fragment ToneMappingACESPassFragment
+			ENDHLSL
+		}
+
+
+		Pass
+		{
+			Name "Tone Mapping Neutral"
+
+			HLSLPROGRAM
+#pragma target 3.5
+//#pragma enable_d3d11_debug_symbols
+#pragma vertex DefaultPassVertex
+#pragma fragment ToneMappingNeutralPassFragment
+			ENDHLSL
+		}
+
+		Pass
+		{
+			Name "Tone Mapping Reinhard"
+
+			HLSLPROGRAM
+#pragma target 3.5
+//#pragma enable_d3d11_debug_symbols
+#pragma vertex DefaultPassVertex
+#pragma fragment ToneMappingReinhardPassFragment
 			ENDHLSL
 		}
 	}
