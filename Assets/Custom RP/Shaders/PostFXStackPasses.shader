@@ -113,6 +113,19 @@
 
 		Pass
 		{
+			Name "Tone Mapping None"
+
+			HLSLPROGRAM
+#pragma target 3.5
+//#pragma enable_d3d11_debug_symbols
+#pragma vertex DefaultPassVertex
+#pragma fragment ToneMappingNonePassFragment
+			ENDHLSL
+		}
+
+
+		Pass
+		{
 			Name "Tone Mapping ACES"
 
 			HLSLPROGRAM
