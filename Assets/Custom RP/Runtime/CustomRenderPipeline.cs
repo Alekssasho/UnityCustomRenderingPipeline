@@ -8,11 +8,13 @@ public partial class CustomRenderPipeline : RenderPipeline
     ShadowSettings shadowSettings;
     PostFXSettings postFXSettings;
     bool allowHDR;
+    int colorLUTResolution;
 
     public CustomRenderPipeline(
         bool allowHDR, bool useDynamicBatching, bool useGPUinstancing, bool useSRPBatcher,
         bool useLightsPerObject, ShadowSettings shadowSettings,
-        PostFXSettings postFXSettings
+        PostFXSettings postFXSettings,
+        int colorLUTResolution
     ) {
         this.allowHDR = allowHDR;
         this.useDynamicBatching = useDynamicBatching;
@@ -20,6 +22,7 @@ public partial class CustomRenderPipeline : RenderPipeline
         this.shadowSettings = shadowSettings;
         this.useLightsPerObject = useLightsPerObject;
         this.postFXSettings = postFXSettings;
+        this.colorLUTResolution = colorLUTResolution;
         GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
         GraphicsSettings.lightsUseLinearIntensity = true;
 
@@ -31,7 +34,7 @@ public partial class CustomRenderPipeline : RenderPipeline
         foreach (Camera camera in cameras)
         {
             renderer.Render(context, camera, allowHDR, useDynamicBatching, useGPUinstancing, useLightsPerObject,
-                shadowSettings, postFXSettings);
+                shadowSettings, postFXSettings, colorLUTResolution);
         }
     }
 
