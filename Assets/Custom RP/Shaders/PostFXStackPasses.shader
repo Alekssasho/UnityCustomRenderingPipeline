@@ -166,7 +166,7 @@
 		{
 			Name "Final"
 
-			Blend One OneMinusSrcAlpha
+			Blend [_FinalSrcBlend] [_FinalDstBlend]
 
 			HLSLPROGRAM
 #pragma target 3.5

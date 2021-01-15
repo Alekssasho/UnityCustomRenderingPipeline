@@ -55,6 +55,8 @@ public partial class PostFXStack
     int colorGradingLUTId = Shader.PropertyToID("_ColorGradingLUT");
     int colorGracingLUTParametersId = Shader.PropertyToID("_ColorGradingLUTParameters");
     int colorGradingLUTInLogCId = Shader.PropertyToID("_ColorGradingLUTInLogC");
+    int finalSrcBlendId = Shader.PropertyToID("_FinalSrcBlend");
+    int finalDstBlendId = Shader.PropertyToID("_FinalDstBlend");
 
 
     const int maxBloomPyramidLevels = 16;
@@ -62,6 +64,8 @@ public partial class PostFXStack
 
     bool useHDR;
     int colorLUTResolution;
+
+    CameraSettings.FinalBlendMode finalBlendMode;
 
     public PostFXStack()
     {
@@ -72,13 +76,20 @@ public partial class PostFXStack
         }
     }
 
-    public void Setup(ScriptableRenderContext context, Camera camera, PostFXSettings settings, bool useHDR, int colorLUTResolution)
+    public void Setup(
+        ScriptableRenderContext context,
+        Camera camera,
+        PostFXSettings settings,
+        bool useHDR,
+        int colorLUTResolution,
+        CameraSettings.FinalBlendMode finalBlendMode)
     {
         this.useHDR = useHDR;
         this.context = context;
         this.camera = camera;
         this.settings = camera.cameraType <= CameraType.SceneView ? settings : null;
         this.colorLUTResolution = colorLUTResolution;
+        this.finalBlendMode = finalBlendMode;
         ApplySceneViewState();
     }
 
@@ -105,8 +116,14 @@ public partial class PostFXStack
 
     void DrawFinal(RenderTargetIdentifier from)
     {
+        buffer.SetGlobalFloat(finalSrcBlendId, (float)finalBlendMode.source);
+        buffer.SetGlobalFloat(finalDstBlendId, (float)finalBlendMode.destination);
         buffer.SetGlobalTexture(fxSourceId, from);
-        buffer.SetRenderTarget(BuiltinRenderTextureType.CameraTarget, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store);
+        buffer.SetRenderTarget(
+            BuiltinRenderTextureType.CameraTarget,
+            finalBlendMode.destination == BlendMode.Zero ? RenderBufferLoadAction.DontCare : RenderBufferLoadAction.Load,
+            RenderBufferStoreAction.Store
+        );
         buffer.SetViewport(camera.pixelRect);
         buffer.DrawProcedural(Matrix4x4.identity, settings.Material, (int)Pass.Final, MeshTopology.Triangles, 3);
     }
