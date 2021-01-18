@@ -18,6 +18,11 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Packing.hlsl"
 
+SAMPLER(sampler_linear_clamp);
+SAMPLER(sampler_point_clamp);
+
+#include "Fragment.hlsl"
+
 float Square(float v)
 {
 	return v * v;
@@ -28,10 +33,10 @@ float DistanceSquared(float3 pA, float3 pB)
 	return dot(pA - pB, pA - pB);
 }
 
-void ClipLOD(float2 positioncCS, float fade)
+void ClipLOD(Fragment fragment, float fade)
 {
 #if defined(LOD_FADE_CROSSFADE)
-	float dither = InterleavedGradientNoise(positioncCS.xy, 0);
+	float dither = InterleavedGradientNoise(fragment.positionSS, 0);
 	clip(fade + (fade < 0.0f ? dither : -dither));
 #endif
 }
