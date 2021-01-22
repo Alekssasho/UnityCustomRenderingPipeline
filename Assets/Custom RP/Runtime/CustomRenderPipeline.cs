@@ -3,20 +3,22 @@ using UnityEngine.Rendering;
 
 public partial class CustomRenderPipeline : RenderPipeline
 {
-    CameraRenderer renderer = new CameraRenderer();
+    CameraRenderer renderer;
     bool useDynamicBatching, useGPUinstancing, useLightsPerObject;
     ShadowSettings shadowSettings;
     PostFXSettings postFXSettings;
-    bool allowHDR;
+    CameraBufferSettings cameraBufferSettings;
     int colorLUTResolution;
 
     public CustomRenderPipeline(
-        bool allowHDR, bool useDynamicBatching, bool useGPUinstancing, bool useSRPBatcher,
+        CameraBufferSettings cameraBufferSettings,
+        bool useDynamicBatching, bool useGPUinstancing, bool useSRPBatcher,
         bool useLightsPerObject, ShadowSettings shadowSettings,
         PostFXSettings postFXSettings,
-        int colorLUTResolution
+        int colorLUTResolution,
+        Shader cameraRendererShader
     ) {
-        this.allowHDR = allowHDR;
+        this.cameraBufferSettings = cameraBufferSettings;
         this.useDynamicBatching = useDynamicBatching;
         this.useGPUinstancing = useGPUinstancing;
         this.shadowSettings = shadowSettings;
@@ -27,15 +29,24 @@ public partial class CustomRenderPipeline : RenderPipeline
         GraphicsSettings.lightsUseLinearIntensity = true;
 
         InitializeForEditor();
+
+        renderer = new CameraRenderer(cameraRendererShader);
     }
 
     protected override void Render(ScriptableRenderContext context, Camera[] cameras)
     {
         foreach (Camera camera in cameras)
         {
-            renderer.Render(context, camera, allowHDR, useDynamicBatching, useGPUinstancing, useLightsPerObject,
+            renderer.Render(context, camera, cameraBufferSettings, useDynamicBatching, useGPUinstancing, useLightsPerObject,
                 shadowSettings, postFXSettings, colorLUTResolution);
         }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        DisposeForEditor();
+        renderer.Dispose();
     }
 
 }

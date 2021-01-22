@@ -9,7 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: Flipbook Particles
   m_Shader: {fileID: 4800000, guid: 312fb5ff98105024ca1c686a8b3f5dc2, type: 3}
-  m_ShaderKeywords: _FLIPBOOK_BLENDING _VERTEX_COLORS
+  m_ShaderKeywords: _DISTORTION _FLIPBOOK_BLENDING _NEAR_FADE _SOFT_PARTICLES _VERTEX_COLORS
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -39,6 +39,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _DistortionMap:
+        m_Texture: {fileID: 2800000, guid: 2374158c934b8624f8f4e1c6a025e63d, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _EmissionMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -64,6 +68,9 @@ Material:
     - _Clipping: 0
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
+    - _Distortion: 1
+    - _DistortionBlend: 0
+    - _DistortionStrength: 0.1
     - _DstBlend: 10
     - _FlipbookBlending: 1
     - _GlossMapScale: 1
@@ -71,9 +78,15 @@ Material:
     - _GlossyReflections: 1
     - _Metallic: 0
     - _Mode: 0
+    - _NearFade: 1
+    - _NearFadeDistance: 1
+    - _NearFadeRange: 1
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _SmoothnessTextureChannel: 0
+    - _SoftParticles: 1
+    - _SoftParticlesDistance: 0
+    - _SoftParticlesRange: 1
     - _SpecularHighlights: 1
     - _SrcBlend: 5
     - _UVSec: 0

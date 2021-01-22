@@ -4127,7 +4127,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!199 &806687744
 ParticleSystemRenderer:
   serializedVersion: 6
@@ -18017,6 +18017,7 @@ GameObject:
   - component: {fileID: 1858258061}
   - component: {fileID: 1858258060}
   - component: {fileID: 1858258059}
+  - component: {fileID: 1858258062}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -18083,12 +18084,36 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1858258058}
   m_LocalRotation: {x: 0.4455612, y: -0.32100984, z: 0.1750269, w: 0.8171864}
-  m_LocalPosition: {x: 16.48, y: 12.92, z: -10.7}
+  m_LocalPosition: {x: 12.66, y: 13.13, z: -8.98}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 57.202, y: -42.892, z: 0}
+--- !u!114 &1858258062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1858258058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62e47f070fa86514dab0a2ecaba32648, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  settings:
+    finalBlendMode:
+      source: 1
+      destination: 0
+    renderingLayerMask: -1
+    maskLights: 0
+    overridePostFX: 1
+    postFXSettings: {fileID: 11400000, guid: c7ab7cd95c4343a47b3cafedf1d1b008, type: 2}
+    copyColor: 1
+    copyDepth: 1
+    renderScaleMode: 2
+    renderScale: 1
 --- !u!1 &1860229079
 GameObject:
   m_ObjectHideFlags: 0

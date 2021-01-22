@@ -175,5 +175,19 @@
 #pragma fragment FinalPassFragment
 			ENDHLSL
 		}
+
+		Pass
+		{
+			Name "Final Rescale"
+
+			Blend [_FinalSrcBlend] [_FinalDstBlend]
+
+			HLSLPROGRAM
+#pragma target 3.5
+//#pragma enable_d3d11_debug_symbols
+#pragma vertex DefaultPassVertex
+#pragma fragment FinalRescalePassFragment
+			ENDHLSL
+		}
 	}
 }

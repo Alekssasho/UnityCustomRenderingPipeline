@@ -340,4 +340,17 @@ float4 FinalPassFragment(Varyings input) : SV_TARGET
 	return color;
 }
 
+bool _CopyBicubic;
+
+float4 FinalRescalePassFragment(Varyings input) : SV_TARGET
+{
+	if(_CopyBicubic)
+	{
+		return GetSourceBicubic(input.screenUV);
+	} else
+	{
+		return GetSource(input.screenUV);
+	}
+}
+
 #endif
