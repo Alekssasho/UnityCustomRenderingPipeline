@@ -9,6 +9,7 @@ public partial class CustomRenderPipeline : RenderPipeline
     PostFXSettings postFXSettings;
     CameraBufferSettings cameraBufferSettings;
     int colorLUTResolution;
+    RayTracingSettings rayTracingSettings;
 
     public CustomRenderPipeline(
         CameraBufferSettings cameraBufferSettings,
@@ -16,7 +17,8 @@ public partial class CustomRenderPipeline : RenderPipeline
         bool useLightsPerObject, ShadowSettings shadowSettings,
         PostFXSettings postFXSettings,
         int colorLUTResolution,
-        Shader cameraRendererShader
+        Shader cameraRendererShader,
+        RayTracingSettings rayTracingSettings
     ) {
         this.cameraBufferSettings = cameraBufferSettings;
         this.useDynamicBatching = useDynamicBatching;
@@ -25,8 +27,16 @@ public partial class CustomRenderPipeline : RenderPipeline
         this.useLightsPerObject = useLightsPerObject;
         this.postFXSettings = postFXSettings;
         this.colorLUTResolution = colorLUTResolution;
+        this.rayTracingSettings = rayTracingSettings;
         GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
         GraphicsSettings.lightsUseLinearIntensity = true;
+        if(SystemInfo.supportsRayTracing)
+        {
+            Debug.Log("Unity supports ray tracing");
+        } else
+        {
+            Debug.Log("Unity does not supports ray tracing");
+        }
 
         InitializeForEditor();
 
@@ -38,7 +48,7 @@ public partial class CustomRenderPipeline : RenderPipeline
         foreach (Camera camera in cameras)
         {
             renderer.Render(context, camera, cameraBufferSettings, useDynamicBatching, useGPUinstancing, useLightsPerObject,
-                shadowSettings, postFXSettings, colorLUTResolution);
+                shadowSettings, postFXSettings, colorLUTResolution, rayTracingSettings);
         }
     }
 

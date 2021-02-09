@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 
 public partial class CameraRenderer
@@ -67,9 +68,16 @@ public partial class CameraRenderer
 
     public void Dispose()
     {
+        if(rayTracingAccelerationStructure != null)
+        {
+            rayTracingAccelerationStructure.Release();
+            rayTracingAccelerationStructure = null;
+        }
         CoreUtils.Destroy(material);
         CoreUtils.Destroy(missingTexture);
     }
+
+    RayTracingAccelerationStructure rayTracingAccelerationStructure = null;
 
     public void Render(
         ScriptableRenderContext context,
@@ -80,7 +88,8 @@ public partial class CameraRenderer
         bool useLightsPerObject,
         ShadowSettings shadowSettings,
         PostFXSettings postFXSettings,
-        int colorLUTResolution
+        int colorLUTResolution,
+        RayTracingSettings rayTracingSettings
     ) {
         this.context = context;
         this.camera = camera;
@@ -159,6 +168,51 @@ public partial class CameraRenderer
             ExecuteBuffer();
         }
         DrawGizmosAfterFX();
+
+        // Ray Tracing
+        // TODO: Remove from here
+        if (rayTracingSettings.use)
+        {
+            if (rayTracingAccelerationStructure == null)
+            {
+                RayTracingAccelerationStructure.RASSettings settings = new RayTracingAccelerationStructure.RASSettings();
+                settings.rayTracingModeMask = RayTracingAccelerationStructure.RayTracingModeMask.Everything;
+                settings.managementMode = RayTracingAccelerationStructure.ManagementMode.Automatic;
+                settings.layerMask = 255;
+
+                rayTracingAccelerationStructure = new RayTracingAccelerationStructure(settings);
+            }
+
+            rayTracingAccelerationStructure.Build();
+
+            buffer.GetTemporaryRT(Shader.PropertyToID("RayTracingRenderTarget"), camera.pixelWidth, camera.pixelHeight,
+                0, FilterMode.Bilinear, UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_SRGB, 1, true);
+            buffer.SetRayTracingShaderPass(rayTracingSettings.shader, "PathTracing");
+            buffer.SetRayTracingTextureParam(
+                rayTracingSettings.shader,
+                Shader.PropertyToID("RenderTarget"),
+                Shader.PropertyToID("RayTracingRenderTarget"));
+            buffer.SetRayTracingAccelerationStructure(
+                rayTracingSettings.shader,
+                Shader.PropertyToID("g_AccelStructure"),
+                rayTracingAccelerationStructure);
+            buffer.SetRayTracingFloatParam(
+                rayTracingSettings.shader,
+                Shader.PropertyToID("g_AspectRatio"),
+                (float)camera.pixelWidth / (float)camera.pixelHeight);
+
+            buffer.DispatchRays(
+                rayTracingSettings.shader,
+                "MyRaygenShader",
+                (uint)camera.pixelWidth,
+                (uint)camera.pixelHeight,
+                1,
+                camera);
+
+            Draw(Shader.PropertyToID("RayTracingRenderTarget"), BuiltinRenderTextureType.CameraTarget);
+            buffer.ReleaseTemporaryRT(Shader.PropertyToID("RayTracingRenderTarget"));
+        }
+
         Cleanup();
         Submit();
     }

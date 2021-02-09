@@ -104,5 +104,21 @@
 			#include "MetaPass.hlsl"
 			ENDHLSL
 		}
+
+		Pass
+		{
+			Name "PathTracing"
+			Tags{
+				"LightMode" = "RayTracing"
+			}
+			ColorMask 0
+			HLSLPROGRAM
+#pragma target 3.5
+//#pragma enable_d3d11_debug_symbols
+#pragma multi_compile_instancing
+#pragma raytracing test
+#include "PathTracingPass.hlsl"
+			ENDHLSL
+		}
 	}
 }

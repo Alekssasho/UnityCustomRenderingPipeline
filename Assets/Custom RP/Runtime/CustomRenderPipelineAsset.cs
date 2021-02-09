@@ -20,6 +20,9 @@ public partial class CustomRenderPipelineAsset : RenderPipelineAsset
         renderScale = 1f
     };
 
+    [SerializeField]
+    RayTracingSettings rayTracingSettings = default;
+
     public enum ColorLUTResolution { _16 = 16, _32 = 32, _64 = 64 }
 
     [SerializeField]
@@ -39,7 +42,8 @@ public partial class CustomRenderPipelineAsset : RenderPipelineAsset
             shadows,
             postFXSettings,
             (int) colorLUTResolution,
-            cameraRendererShader
+            cameraRendererShader,
+            rayTracingSettings
         );
     }
 }
