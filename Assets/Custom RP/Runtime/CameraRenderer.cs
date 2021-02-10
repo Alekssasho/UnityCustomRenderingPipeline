@@ -200,6 +200,11 @@ public partial class CameraRenderer
                 rayTracingSettings.shader,
                 Shader.PropertyToID("g_AspectRatio"),
                 (float)camera.pixelWidth / (float)camera.pixelHeight);
+            buffer.SetRayTracingTextureParam(
+                rayTracingSettings.shader,
+                Shader.PropertyToID("unity_SpecCube0"),
+                rayTracingSettings.sky
+            );
 
             buffer.DispatchRays(
                 rayTracingSettings.shader,

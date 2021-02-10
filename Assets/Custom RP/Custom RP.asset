@@ -41,7 +41,8 @@ MonoBehaviour:
     renderScale: 1
     bicubicRescaling: 1
   rayTracingSettings:
-    use: 1
+    use: 0
     shader: {fileID: 4807578003741378534, guid: b6b32d101f65ae144a868357cebac0ab, type: 3}
+    sky: {fileID: 8900000, guid: 594661d0328aee84798bdfbc4ecf5aba, type: 3}
   colorLUTResolution: 32
   cameraRendererShader: {fileID: 4800000, guid: bd2974cc54b69d14582cbba6efde555a, type: 3}
