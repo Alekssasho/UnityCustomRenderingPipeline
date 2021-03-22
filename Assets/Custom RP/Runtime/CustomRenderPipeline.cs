@@ -30,17 +30,17 @@ public partial class CustomRenderPipeline : RenderPipeline
         this.rayTracingSettings = rayTracingSettings;
         GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
         GraphicsSettings.lightsUseLinearIntensity = true;
-        if(SystemInfo.supportsRayTracing)
-        {
-            Debug.Log("Unity supports ray tracing");
-        } else
-        {
-            Debug.Log("Unity does not supports ray tracing");
-        }
 
         InitializeForEditor();
 
-        renderer = new CameraRenderer(cameraRendererShader);
+        if(rayTracingSettings.use)
+        {
+            renderer = new CameraPathTracerRenderer(cameraRendererShader);
+        }
+        else
+        {
+            renderer = new CameraRenderer(cameraRendererShader);
+        }
     }
 
     protected override void Render(ScriptableRenderContext context, Camera[] cameras)
@@ -49,7 +49,7 @@ public partial class CustomRenderPipeline : RenderPipeline
         {
             renderer.Render(context, camera, cameraBufferSettings, useDynamicBatching, useGPUinstancing, useLightsPerObject,
                 shadowSettings, postFXSettings, colorLUTResolution, rayTracingSettings);
-        }
+    }
     }
 
     protected override void Dispose(bool disposing)

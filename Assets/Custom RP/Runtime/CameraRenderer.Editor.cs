@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-partial class CameraRenderer
+public partial class CameraRenderer
 {
     partial void DrawUnsupportedShaders();
     partial void DrawGizmosBeforeFX();

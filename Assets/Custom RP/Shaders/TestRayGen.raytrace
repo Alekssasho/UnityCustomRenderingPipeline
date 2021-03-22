@@ -49,6 +49,6 @@ void MissShader(inout RayPayload payload : SV_RayPayload)
 {
     float4 environment = SAMPLE_TEXTURECUBE_LOD(
         unity_SpecCube0, samplerunity_SpecCube0, WorldRayDirection(), 0);
-    environment.xyz = DecodeHDREnvironment(environment, unity_SpecCube0_HDR);
+    //environment.xyz = DecodeHDREnvironment(environment, unity_SpecCube0_HDR);
     payload.color = environment;
 }

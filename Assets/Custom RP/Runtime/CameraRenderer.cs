@@ -1,6 +1,5 @@
 ﻿using System;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 
 public partial class CameraRenderer
@@ -8,7 +7,7 @@ public partial class CameraRenderer
     ScriptableRenderContext context;
     Camera camera;
     const string bufferName = "Render Camera";
-    CommandBuffer buffer = new CommandBuffer
+    protected CommandBuffer buffer = new CommandBuffer
     {
         name = bufferName
     };
@@ -18,7 +17,7 @@ public partial class CameraRenderer
 
     PostFXStack postFXStack = new PostFXStack();
 
-    Material material;
+    protected Material material;
 
     static ShaderTagId
         unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit"),
@@ -66,20 +65,13 @@ public partial class CameraRenderer
         missingTexture.Apply(true, true);
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
-        if(rayTracingAccelerationStructure != null)
-        {
-            rayTracingAccelerationStructure.Release();
-            rayTracingAccelerationStructure = null;
-        }
         CoreUtils.Destroy(material);
         CoreUtils.Destroy(missingTexture);
     }
 
-    RayTracingAccelerationStructure rayTracingAccelerationStructure = null;
-
-    public void Render(
+    protected void SetupForRender(
         ScriptableRenderContext context,
         Camera camera,
         CameraBufferSettings bufferSettings,
@@ -89,8 +81,8 @@ public partial class CameraRenderer
         ShadowSettings shadowSettings,
         PostFXSettings postFXSettings,
         int colorLUTResolution,
-        RayTracingSettings rayTracingSettings
-    ) {
+        RayTracingSettings rayTracingSettings)
+    {
         this.context = context;
         this.camera = camera;
         this.bufferSettings = bufferSettings;
@@ -99,32 +91,34 @@ public partial class CameraRenderer
         CameraSettings cameraSettings = crpCamera ? crpCamera.Settings : defaultCameraSettings;
         this.cameraSettings = cameraSettings;
 
-        if(camera.cameraType == CameraType.Reflection)
+        if (camera.cameraType == CameraType.Reflection)
         {
             useColorTexture = bufferSettings.copyColorReflection;
             useDepthTexture = bufferSettings.copyDepthReflections;
-        } else
+        }
+        else
         {
             useColorTexture = bufferSettings.copyColor && cameraSettings.copyColor;
             useDepthTexture = bufferSettings.copyDepth && cameraSettings.copyDepth;
         }
 
-        if(cameraSettings.overridePostFX)
+        if (cameraSettings.overridePostFX)
         {
             postFXSettings = cameraSettings.postFXSettings;
         }
 
-        if(!Cull(shadowSettings.maxDistance))
+        if (!Cull(shadowSettings.maxDistance))
         {
             return;
         }
         useHDR = bufferSettings.allowHDR && camera.allowHDR;
-        if(useScaledRendering)
+        if (useScaledRendering)
         {
             renderScale = Mathf.Clamp(renderScale, renderScaleMin, renderScaleMax);
             bufferSize.x = (int)(camera.pixelWidth * renderScale);
             bufferSize.y = (int)(camera.pixelHeight * renderScale);
-        } else
+        }
+        else
         {
             bufferSize.x = camera.pixelWidth;
             bufferSize.y = camera.pixelHeight;
@@ -155,6 +149,32 @@ public partial class CameraRenderer
         );
         buffer.EndSample(SampleName);
         Setup();
+    }
+
+    public virtual void Render(
+        ScriptableRenderContext context,
+        Camera camera,
+        CameraBufferSettings bufferSettings,
+        bool useDynamicBatching,
+        bool useGPUInstancing,
+        bool useLightsPerObject,
+        ShadowSettings shadowSettings,
+        PostFXSettings postFXSettings,
+        int colorLUTResolution,
+        RayTracingSettings rayTracingSettings
+    ) {
+        SetupForRender(
+             context,
+            camera,
+            bufferSettings,
+            useDynamicBatching,
+            useGPUInstancing,
+            useLightsPerObject,
+            shadowSettings,
+            postFXSettings,
+            colorLUTResolution,
+            rayTracingSettings);
+        
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing, useLightsPerObject, cameraSettings.renderingLayerMask);
         DrawUnsupportedShaders();
         DrawGizmosBeforeFX();
@@ -168,55 +188,6 @@ public partial class CameraRenderer
             ExecuteBuffer();
         }
         DrawGizmosAfterFX();
-
-        // Ray Tracing
-        // TODO: Remove from here
-        if (rayTracingSettings.use)
-        {
-            if (rayTracingAccelerationStructure == null)
-            {
-                RayTracingAccelerationStructure.RASSettings settings = new RayTracingAccelerationStructure.RASSettings();
-                settings.rayTracingModeMask = RayTracingAccelerationStructure.RayTracingModeMask.Everything;
-                settings.managementMode = RayTracingAccelerationStructure.ManagementMode.Automatic;
-                settings.layerMask = 255;
-
-                rayTracingAccelerationStructure = new RayTracingAccelerationStructure(settings);
-            }
-
-            rayTracingAccelerationStructure.Build();
-
-            buffer.GetTemporaryRT(Shader.PropertyToID("RayTracingRenderTarget"), camera.pixelWidth, camera.pixelHeight,
-                0, FilterMode.Bilinear, UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_SRGB, 1, true);
-            buffer.SetRayTracingShaderPass(rayTracingSettings.shader, "PathTracing");
-            buffer.SetRayTracingTextureParam(
-                rayTracingSettings.shader,
-                Shader.PropertyToID("RenderTarget"),
-                Shader.PropertyToID("RayTracingRenderTarget"));
-            buffer.SetRayTracingAccelerationStructure(
-                rayTracingSettings.shader,
-                Shader.PropertyToID("g_AccelStructure"),
-                rayTracingAccelerationStructure);
-            buffer.SetRayTracingFloatParam(
-                rayTracingSettings.shader,
-                Shader.PropertyToID("g_AspectRatio"),
-                (float)camera.pixelWidth / (float)camera.pixelHeight);
-            buffer.SetRayTracingTextureParam(
-                rayTracingSettings.shader,
-                Shader.PropertyToID("unity_SpecCube0"),
-                rayTracingSettings.sky
-            );
-
-            buffer.DispatchRays(
-                rayTracingSettings.shader,
-                "MyRaygenShader",
-                (uint)camera.pixelWidth,
-                (uint)camera.pixelHeight,
-                1,
-                camera);
-
-            Draw(Shader.PropertyToID("RayTracingRenderTarget"), BuiltinRenderTextureType.CameraTarget);
-            buffer.ReleaseTemporaryRT(Shader.PropertyToID("RayTracingRenderTarget"));
-        }
 
         Cleanup();
         Submit();
@@ -279,7 +250,7 @@ public partial class CameraRenderer
         ExecuteBuffer();
     }
 
-    void Cleanup()
+    protected void Cleanup()
     {
         lighting.Cleanup();
         if(useIntermediateBuffer)
@@ -335,7 +306,7 @@ public partial class CameraRenderer
         ExecuteBuffer();
     }
 
-    void Submit()
+    protected void Submit()
     {
         buffer.EndSample(SampleName);
         ExecuteBuffer();
@@ -383,7 +354,7 @@ public partial class CameraRenderer
         context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
     }
 
-    void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to, bool isDepth = false)
+    protected void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to, bool isDepth = false)
     {
         buffer.SetGlobalTexture(sourceTextureId, from);
         buffer.SetRenderTarget(to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
@@ -406,9 +377,20 @@ public partial class CameraRenderer
         buffer.SetGlobalFloat(dstBlendId, 0f);
     }
 
-    void ExecuteBuffer()
+    public void ExecuteBuffer()
     {
         context.ExecuteCommandBuffer(buffer);
         buffer.Clear();
+    }
+
+    protected void DrawUnsupportedShadersNonPartial()
+    {
+        DrawUnsupportedShaders();
+    }
+
+    protected void DrawGizmos()
+    {
+        DrawGizmosBeforeFX();
+        DrawGizmosAfterFX();
     }
 }
