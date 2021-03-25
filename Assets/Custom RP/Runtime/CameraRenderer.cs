@@ -137,15 +137,18 @@ public partial class CameraRenderer
             useLightsPerObject,
             cameraSettings.maskLights ? cameraSettings.renderingLayerMask : -1
         );
+        bufferSettings.fxaa.enabled &= cameraSettings.allowFXAA;
         postFXStack.Setup(
             context,
             camera,
             bufferSize,
             postFXSettings,
+            cameraSettings.keepAlpha,
             useHDR,
             colorLUTResolution,
             cameraSettings.finalBlendMode,
-            bufferSettings.bicubicRescaling
+            bufferSettings.bicubicRescaling,
+            bufferSettings.fxaa
         );
         buffer.EndSample(SampleName);
         Setup();

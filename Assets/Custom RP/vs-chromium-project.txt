@@ -21,3 +21,6 @@ target/
 
 [SearchableFiles.include]
 *
+
+[SourceExplorer.ignore]
+*.meta

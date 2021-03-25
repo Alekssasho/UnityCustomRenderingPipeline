@@ -41,12 +41,12 @@ TEXTURE2D(_PostFXSource2);
 
 float4 GetSource(float2 screenUV)
 {
-	return SAMPLE_TEXTURE2D(_PostFXSource, sampler_linear_clamp, screenUV);
+	return SAMPLE_TEXTURE2D_LOD(_PostFXSource, sampler_linear_clamp, screenUV, 0);
 }
 
 float4 GetSource2(float2 screenUV)
 {
-	return SAMPLE_TEXTURE2D(_PostFXSource2, sampler_linear_clamp, screenUV);
+	return SAMPLE_TEXTURE2D_LOD(_PostFXSource2, sampler_linear_clamp, screenUV, 0);
 }
 
 float4 GetSourceBicubic(float2 screenUV)
@@ -333,10 +333,18 @@ float3 ApplyColorGradingLUT(float3 color)
 	);
 }
 
-float4 FinalPassFragment(Varyings input) : SV_TARGET
+float4 ApplyColorGradingPassFragment(Varyings input) : SV_TARGET
 {
 	float4 color = GetSource(input.screenUV);
 	color.rgb = ApplyColorGradingLUT(color.rgb);
+	return color;
+}
+
+float4 ApplyColorGradingWithLumaPassFragment(Varyings input) : SV_TARGET
+{
+	float4 color = GetSource(input.screenUV);
+	color.rgb = ApplyColorGradingLUT(color.rgb);
+	color.a = sqrt(Luminance(color.rgb));
 	return color;
 }
 

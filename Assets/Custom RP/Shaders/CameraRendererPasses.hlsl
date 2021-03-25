@@ -30,7 +30,7 @@ Varyings DefaultPassVertex(uint vertexID : SV_VertexID)
 
 float4 CopyPassFragment(Varyings input) : SV_TARGET
 {
-	return SAMPLE_TEXTURE2D(_SourceTexture, sampler_linear_clamp, input.screenUV);
+	return SAMPLE_TEXTURE2D_LOD(_SourceTexture, sampler_linear_clamp, input.screenUV, 0);
 }
 
 struct Output
@@ -43,7 +43,7 @@ Output CopyDepthPassFragment(Varyings input)
 {
 	Output output;
 	output.color = 0.0;
-	output.depth = SAMPLE_DEPTH_TEXTURE(_SourceTexture, sampler_point_clamp, input.screenUV);
+	output.depth = SAMPLE_DEPTH_TEXTURE_LOD(_SourceTexture, sampler_point_clamp, input.screenUV, 0);
 	return output;
 }
 

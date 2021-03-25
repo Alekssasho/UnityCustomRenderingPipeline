@@ -199,6 +199,7 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 6.64e-43, y: 0, z: 6.64e-43, w: 5.0149844e-29}
   m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!4 &159243498
@@ -782,7 +783,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 3366dcc782931944582b070767193942, type: 2}
+  - {fileID: 2100000, guid: f0f2aec440fc38b4190d3535a0bd4bee, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1025,6 +1026,12 @@ MonoBehaviour:
     maskLights: 0
     overridePostFX: 1
     postFXSettings: {fileID: 11400000, guid: d6f1e4b967c8b9e4eb74332b46955353, type: 2}
+    allowFXAA: 0
+    keepAlpha: 0
+    copyColor: 1
+    copyDepth: 1
+    renderScaleMode: 0
+    renderScale: 1
 --- !u!1 &980308397
 GameObject:
   m_ObjectHideFlags: 0
@@ -1160,7 +1167,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 3366dcc782931944582b070767193942, type: 2}
+  - {fileID: 2100000, guid: a864d43f0d916dc47aecb573bcadd4c2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1311,6 +1318,7 @@ GameObject:
   - component: {fileID: 1261140137}
   - component: {fileID: 1261140136}
   - component: {fileID: 1261140139}
+  - component: {fileID: 1261140140}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1401,8 +1409,31 @@ MonoBehaviour:
       destination: 0
     renderingLayerMask: 1
     maskLights: 0
-    overridePostFX: 0
-    postFXSettings: {fileID: 0}
+    overridePostFX: 1
+    postFXSettings: {fileID: 11400000, guid: b07a033a2a393be458ad45bc69188bce, type: 2}
+    allowFXAA: 1
+    keepAlpha: 0
+    copyColor: 1
+    copyDepth: 1
+    renderScaleMode: 0
+    renderScale: 1
+--- !u!114 &1261140140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1261140135}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 618b0e3f6c65dd247a4a016150006c57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_LookSpeedController: 120
+  m_LookSpeedMouse: 10
+  m_MoveSpeed: 10
+  m_MoveSpeedIncrement: 2.5
+  m_Turbo: 10
 --- !u!1 &1495005913
 GameObject:
   m_ObjectHideFlags: 0
@@ -1793,7 +1824,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 3366dcc782931944582b070767193942, type: 2}
+  - {fileID: 2100000, guid: a864d43f0d916dc47aecb573bcadd4c2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2253,6 +2284,7 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!4 &2118585643
@@ -2345,6 +2377,7 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!4 &2133717490
