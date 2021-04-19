@@ -10,6 +10,16 @@ public class CameraPathTracerRenderer : CameraRenderer
 
     RayTracingAccelerationStructure rayTracingAccelerationStructure = null;
 
+    ComputeBuffer lightsBuffer = null;
+
+    struct Light
+    {
+        public Vector3 color;
+        public Vector3 direction;
+        public Vector3 position;
+        public uint type;
+    }
+
     public CameraPathTracerRenderer(Shader shader) : base(shader)
     {
         renderGraph = new RenderGraph("Path Tracing Render Graph");
@@ -21,6 +31,12 @@ public class CameraPathTracerRenderer : CameraRenderer
         {
             rayTracingAccelerationStructure.Release();
             rayTracingAccelerationStructure = null;
+        }
+
+        if(lightsBuffer != null)
+        {
+            lightsBuffer.Release();
+            lightsBuffer = null;
         }
 
         renderGraph.Cleanup();
@@ -65,36 +81,29 @@ public class CameraPathTracerRenderer : CameraRenderer
 
         rayTracingAccelerationStructure.Build();
 
-        //buffer.GetTemporaryRT(Shader.PropertyToID("RayTracingRenderTarget"), camera.pixelWidth, camera.pixelHeight,
-        //    0, FilterMode.Bilinear, UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_SRGB, 1, true);
-        //buffer.SetRayTracingShaderPass(rayTracingSettings.shader, "PathTracing");
-        //buffer.SetRayTracingTextureParam(
-        //    rayTracingSettings.shader,
-        //    Shader.PropertyToID("RenderTarget"),
-        //    Shader.PropertyToID("RayTracingRenderTarget"));
-        //buffer.SetRayTracingAccelerationStructure(
-        //    rayTracingSettings.shader,
-        //    Shader.PropertyToID("g_AccelStructure"),
-        //    rayTracingAccelerationStructure);
-        //buffer.SetRayTracingFloatParam(
-        //    rayTracingSettings.shader,
-        //    Shader.PropertyToID("g_AspectRatio"),
-        //    (float)camera.pixelWidth / (float)camera.pixelHeight);
-        //buffer.SetRayTracingTextureParam(
-        //    rayTracingSettings.shader,
-        //    Shader.PropertyToID("unity_SpecCube0"),
-        //    rayTracingSettings.sky
-        //);
+        if (lightsBuffer == null || lightsBuffer.count != cullingResults.visibleLights.Length)
+        {
+            if(lightsBuffer != null)
+            {
+                lightsBuffer.Release();
+            }
+            lightsBuffer = new ComputeBuffer(cullingResults.visibleLights.Length, 3 * 3 * 4 + 4);
+        }
 
-        //buffer.DispatchRays(
-        //    rayTracingSettings.shader,
-        //    "MyRaygenShader",
-        //    (uint)camera.pixelWidth,
-        //    (uint)camera.pixelHeight,
-        //    1,
-        //    camera);
+        Light[] lights = new Light[cullingResults.visibleLights.Length];
+        for(int i = 0; i < cullingResults.visibleLights.Length; i++)
+        {
+            VisibleLight visibleLight = cullingResults.visibleLights[i];
+            lights[i] = new Light()
+            {
+                color = new Vector3(visibleLight.finalColor.r, visibleLight.finalColor.g, visibleLight.finalColor.b),
+                direction = visibleLight.localToWorldMatrix.GetColumn(2),
+                position = new Vector3(0.0f, 0.0f, 0.0f),
+                type = 0,
+            };
+        }
 
-        //ExecuteBuffer();
+        lightsBuffer.SetData(lights);
 
         var renderGraphParams = new RenderGraphParameters()
         {
@@ -113,9 +122,6 @@ public class CameraPathTracerRenderer : CameraRenderer
         AddDrawPass(renderGraph, rtResult);
         renderGraph.Execute();
         renderGraph.EndFrame();
-
-        //Draw(Shader.PropertyToID("RayTracingRenderTarget"), BuiltinRenderTextureType.CameraTarget);
-        //buffer.ReleaseTemporaryRT(Shader.PropertyToID("RayTracingRenderTarget"));
 
         base.DrawUnsupportedShadersNonPartial();
         base.DrawGizmos();
@@ -160,6 +166,7 @@ public class CameraPathTracerRenderer : CameraRenderer
         public RayTracingShader shader;
         public Cubemap sky;
         public float aspectRatio;
+        public ComputeBuffer lightsBuffer;
     }
     void AddRTPass(RenderGraph renderGraph, TextureHandle dstTexture, RayTracingSettings rtSettings, Camera camera)
     {
@@ -169,6 +176,7 @@ public class CameraPathTracerRenderer : CameraRenderer
             passData.sky = rtSettings.sky;
             passData.dstTexture = builder.WriteTexture(dstTexture);
             passData.aspectRatio = (float)camera.pixelWidth / (float)camera.pixelHeight;
+            passData.lightsBuffer = lightsBuffer;
 
             builder.SetRenderFunc((RTPassData data, RenderGraphContext ctx) =>
             {
@@ -190,6 +198,7 @@ public class CameraPathTracerRenderer : CameraRenderer
                     Shader.PropertyToID("unity_SpecCube0"),
                     data.sky
                 );
+                data.shader.SetBuffer(Shader.PropertyToID("g_Lights"), data.lightsBuffer);
 
                 ctx.cmd.DispatchRays(
                     data.shader,

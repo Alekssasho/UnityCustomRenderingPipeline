@@ -3,10 +3,7 @@
 
 // Engine includes
 #include "UnityRaytracingMeshUtils.cginc"
-
-struct RayPayload {
-	float4 color;
-};
+#include "../ShaderLibrary/CommonPathTracing.hlsl"
 
 struct AttributeData
 {
@@ -40,7 +37,7 @@ Vertex InterpolateVertices(Vertex v0, Vertex v1, Vertex v2, float3 barycentrics)
 }
 
 [shader("closesthit")]
-void ClosestHitMain(inout RayPayload payload : SV_RayPayload, AttributeData attribs : SV_IntersectionAttributes)
+void ClosestHitMain(inout PathTracingRayPayload payload : SV_RayPayload, AttributeData attribs : SV_IntersectionAttributes)
 {
 	uint3 triangleIndices = UnityRayTracingFetchTriangleIndices(PrimitiveIndex());
     Vertex v0, v1, v2;
@@ -54,7 +51,10 @@ void ClosestHitMain(inout RayPayload payload : SV_RayPayload, AttributeData attr
     v.uv = TransformBaseUV(v.uv);
     float4 map = _BaseMap.SampleLevel(sampler_BaseMap, v.uv, 0);
     float4 color = INPUT_PROP(_BaseColor);
-    payload.color = map * color;
+    payload.color = (map * color).xyz;
+    payload.normal = v.normal;
+
+    payload.hitType = HitType::LitSurface;
 }
 
 #endif

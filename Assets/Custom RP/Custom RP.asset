@@ -44,9 +44,10 @@ MonoBehaviour:
       enabled: 1
       fixedThreshold: 0.0312
       relativeThreshold: 0.063
-      subpixelBlending: 0.754
+      subpixelBlending: 0
+      quality: 0
   rayTracingSettings:
-    use: 0
+    use: 1
     shader: {fileID: 4807578003741378534, guid: b6b32d101f65ae144a868357cebac0ab, type: 3}
     sky: {fileID: 8900000, guid: 594661d0328aee84798bdfbc4ecf5aba, type: 3}
   colorLUTResolution: 32

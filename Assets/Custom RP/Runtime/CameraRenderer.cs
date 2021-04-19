@@ -11,7 +11,7 @@ public partial class CameraRenderer
     {
         name = bufferName
     };
-    CullingResults cullingResults;
+    protected CullingResults cullingResults;
 
     Lighting lighting = new Lighting();
 
