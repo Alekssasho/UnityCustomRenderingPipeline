@@ -53,6 +53,7 @@ void ClosestHitMain(inout PathTracingRayPayload payload : SV_RayPayload, Attribu
     float4 color = INPUT_PROP(_BaseColor);
     payload.color = (map * color).xyz;
     payload.normal = v.normal;
+    payload.position = RayTCurrent() * WorldRayDirection() + WorldRayOrigin();
 
     payload.hitType = HitType::LitSurface;
 }

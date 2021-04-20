@@ -52,9 +52,28 @@ void MyRaygenShader()
 
         Light light = g_Lights[0];
 
-        colorToWrite = payload.color
-            * saturate(dot(payload.normal, -light.direction))
-            * light.color;
+        // Shadow Ray
+        RayDesc shadowRay;
+        shadowRay.Origin = payload.position;
+        shadowRay.Direction = -light.direction;
+        shadowRay.TMin = 1e-3f; // Small number to avoid self intersection
+        shadowRay.TMax = 1e20f; // TODO: This should be length to the light position.
+
+        PathTracingShadowRayPayload shadowRayPayload;
+        shadowRayPayload.hit = true; // Default value
+
+        TraceRay(g_AccelStructure,
+            RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH
+            | RAY_FLAG_FORCE_OPAQUE
+            | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
+            0xFF, 0, 1, 1 /*miss index*/, shadowRay, shadowRayPayload);
+
+        if (!shadowRayPayload.hit) {
+            colorToWrite = payload.color
+                * saturate(dot(payload.normal, -light.direction))
+                * light.color;
+        }
+        //colorToWrite = payload.position;
     }
     else if (payload.hitType == HitType::Environment)
     {
@@ -70,12 +89,20 @@ void MyRaygenShader()
 TextureCube<float4> unity_SpecCube0;
 SAMPLER(samplerunity_SpecCube0);
 
+// Normal ray miss shader
 [shader("miss")]
-void MissShader(inout PathTracingRayPayload payload : SV_RayPayload)
+void MissShader0(inout PathTracingRayPayload payload : SV_RayPayload)
 {
     float4 environment = SAMPLE_TEXTURECUBE_LOD(
         unity_SpecCube0, samplerunity_SpecCube0, WorldRayDirection(), 0);
     //environment.xyz = DecodeHDREnvironment(environment, unity_SpecCube0_HDR);
     payload.color = environment.xyz;
     payload.hitType = HitType::Environment;
+}
+
+// Shadow Ray Miss shader
+[shader("miss")]
+void MissShader1(inout PathTracingShadowRayPayload payload : SV_RayPayload)
+{
+    payload.hit = false;
 }

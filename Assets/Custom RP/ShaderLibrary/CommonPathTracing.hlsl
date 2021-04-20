@@ -10,7 +10,13 @@ enum HitType : uint
 struct PathTracingRayPayload {
 	float3 color;
 	float3 normal;
+	float3 position;
 	uint hitType;
+};
+
+struct PathTracingShadowRayPayload
+{
+	bool hit;
 };
 
 #endif
