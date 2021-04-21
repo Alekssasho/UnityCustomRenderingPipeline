@@ -118,7 +118,8 @@ public class CameraPathTracerRenderer : CameraRenderer
         desc.colorFormat = GraphicsFormat.R8G8B8A8_SRGB;
         TextureHandle rtResult = renderGraph.CreateTexture(desc);
 
-        AddRTPass(renderGraph, rtResult, rayTracingSettings, camera);
+        // TODO: Get Real frame index as last argument
+        AddRTPass(renderGraph, rtResult, rayTracingSettings, camera, 0);
         AddDrawPass(renderGraph, rtResult);
         renderGraph.Execute();
         renderGraph.EndFrame();
@@ -167,8 +168,9 @@ public class CameraPathTracerRenderer : CameraRenderer
         public Cubemap sky;
         public float aspectRatio;
         public ComputeBuffer lightsBuffer;
+        public uint frameIndex;
     }
-    void AddRTPass(RenderGraph renderGraph, TextureHandle dstTexture, RayTracingSettings rtSettings, Camera camera)
+    void AddRTPass(RenderGraph renderGraph, TextureHandle dstTexture, RayTracingSettings rtSettings, Camera camera, uint frameIndex)
     {
         using (var builder = renderGraph.AddRenderPass<RTPassData>("RT Pass", out var passData))
         {
@@ -177,6 +179,7 @@ public class CameraPathTracerRenderer : CameraRenderer
             passData.dstTexture = builder.WriteTexture(dstTexture);
             passData.aspectRatio = (float)camera.pixelWidth / (float)camera.pixelHeight;
             passData.lightsBuffer = lightsBuffer;
+            passData.frameIndex = frameIndex;
 
             builder.SetRenderFunc((RTPassData data, RenderGraphContext ctx) =>
             {
@@ -198,6 +201,10 @@ public class CameraPathTracerRenderer : CameraRenderer
                     Shader.PropertyToID("unity_SpecCube0"),
                     data.sky
                 );
+                ctx.cmd.SetRayTracingFloatParam(
+                    data.shader,
+                    Shader.PropertyToID("g_FrameSeed"),
+                    data.frameIndex);
                 data.shader.SetBuffer(Shader.PropertyToID("g_Lights"), data.lightsBuffer);
 
                 ctx.cmd.DispatchRays(
