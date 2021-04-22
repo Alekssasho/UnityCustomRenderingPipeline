@@ -111,7 +111,7 @@ RandomSequence InitializeRandomSequence(uint pixelSeed, uint frameSeed)
 
 float GenerateSample(inout RandomSequence sequence)
 {
-	uint haltonSampleIndex = RandomInteger(sequence.PixelSeed) + sequence.PixelSeed;
+	uint haltonSampleIndex = RandomInteger(sequence.PixelSeed) + sequence.FrameSeed;
 
 	float randomSample = HaltonNumber(haltonSampleIndex, Prime512(sequence.Dimension));
 	sequence.Dimension += 1;

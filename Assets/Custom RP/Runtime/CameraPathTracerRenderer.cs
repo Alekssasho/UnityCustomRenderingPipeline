@@ -3,6 +3,7 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEditor;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
+using System;
 
 public class CameraPathTracerRenderer : CameraRenderer
 {
@@ -11,6 +12,13 @@ public class CameraPathTracerRenderer : CameraRenderer
     RayTracingAccelerationStructure rayTracingAccelerationStructure = null;
 
     ComputeBuffer lightsBuffer = null;
+
+    RenderTexture accumulationTexture = null;
+    RTHandle accumulationHandle;
+
+    uint accumulatedFrames = 0;
+
+    Matrix4x4 lastCameraMatrix;
 
     struct Light
     {
@@ -90,6 +98,12 @@ public class CameraPathTracerRenderer : CameraRenderer
             lightsBuffer = new ComputeBuffer(cullingResults.visibleLights.Length, 3 * 3 * 4 + 4);
         }
 
+        if(accumulationTexture == null || accumulationTexture.width != camera.pixelWidth || accumulationTexture.height != camera.pixelHeight)
+        {
+            accumulationTexture = new RenderTexture(camera.pixelWidth, camera.pixelHeight, 0);
+            accumulationHandle = RTHandles.Alloc(accumulationTexture);
+        }
+
         Light[] lights = new Light[cullingResults.visibleLights.Length];
         for(int i = 0; i < cullingResults.visibleLights.Length; i++)
         {
@@ -105,6 +119,11 @@ public class CameraPathTracerRenderer : CameraRenderer
 
         lightsBuffer.SetData(lights);
 
+        if(lastCameraMatrix != camera.cameraToWorldMatrix)
+        {
+            accumulatedFrames = 0;
+        }
+
         var renderGraphParams = new RenderGraphParameters()
         {
             scriptableRenderContext = context,
@@ -118,9 +137,13 @@ public class CameraPathTracerRenderer : CameraRenderer
         desc.colorFormat = GraphicsFormat.R8G8B8A8_SRGB;
         TextureHandle rtResult = renderGraph.CreateTexture(desc);
 
-        // TODO: Get Real frame index as last argument
-        AddRTPass(renderGraph, rtResult, rayTracingSettings, camera, 0);
-        AddDrawPass(renderGraph, rtResult);
+        TextureHandle accumulatedResult = renderGraph.ImportTexture(accumulationHandle);
+        TextureHandle backbuffer = renderGraph.ImportBackbuffer(BuiltinRenderTextureType.CameraTarget);
+
+        AddRTPass(renderGraph, rtResult, rayTracingSettings, camera, accumulatedFrames);
+        AddAccumulatePass(renderGraph, rtResult, accumulatedResult, accumulatedFrames);
+        AddDrawPass(renderGraph, accumulatedResult, backbuffer);
+
         renderGraph.Execute();
         renderGraph.EndFrame();
 
@@ -129,8 +152,37 @@ public class CameraPathTracerRenderer : CameraRenderer
 
         Cleanup();
         Submit();
+
+        accumulatedFrames++;
+        lastCameraMatrix = camera.cameraToWorldMatrix;
     }
 
+    class AccumulatePassData
+    {
+        public TextureHandle srcTexture;
+        public TextureHandle dstTexture;
+        public uint frameIndex;
+    }
+
+    private void AddAccumulatePass(RenderGraph renderGraph, TextureHandle rtResult, TextureHandle accumulatedResult, uint frameIndex)
+    {
+        using (var builder = renderGraph.AddRenderPass<AccumulatePassData>("Accumulate Path Tracing Pass", out var passData))
+        {
+            passData.srcTexture = builder.ReadTexture(rtResult);
+            passData.dstTexture = builder.WriteTexture(accumulatedResult);
+            passData.frameIndex = frameIndex;
+
+            builder.SetRenderFunc((AccumulatePassData data, RenderGraphContext ctx) =>
+            {
+                var materialPropertyBlock = ctx.renderGraphPool.GetTempMaterialPropertyBlock();
+                materialPropertyBlock.SetTexture("_SourceTexture", data.srcTexture);
+                materialPropertyBlock.SetFloat("g_FrameIndex", passData.frameIndex);
+
+                ctx.cmd.SetRenderTarget(data.dstTexture);
+                ctx.cmd.DrawProcedural(Matrix4x4.identity, material, 2, MeshTopology.Triangles, 3, 1, materialPropertyBlock);
+            });
+        };
+    }
 
     class DrawPassData
     {
@@ -138,24 +190,26 @@ public class CameraPathTracerRenderer : CameraRenderer
         public TextureHandle dstTexture;
     }
 
-    void AddDrawPass(RenderGraph renderGraph, TextureHandle srcTexture)
+    void AddDrawPass(RenderGraph renderGraph, TextureHandle srcTexture, TextureHandle dstTexture)
     {
         using (var builder = renderGraph.AddRenderPass<DrawPassData>("Draw Pass", out var passData))
         {
             passData.srcTexture = builder.ReadTexture(srcTexture);
+            passData.dstTexture = builder.WriteTexture(dstTexture);
 
             builder.SetRenderFunc((DrawPassData data, RenderGraphContext ctx) =>
             {
                 var materialPropertyBlock = ctx.renderGraphPool.GetTempMaterialPropertyBlock();
                 materialPropertyBlock.SetTexture("_SourceTexture", data.srcTexture);
 
-                CoreUtils.SetRenderTarget(
-                    ctx.cmd,
-                    BuiltinRenderTextureType.CameraTarget,
+                // This for some reason don't work if set from materialPropertyBlock
+                ctx.cmd.SetGlobalFloat(Shader.PropertyToID("_CameraSrcBlend"), (float)BlendMode.One);
+                ctx.cmd.SetGlobalFloat(Shader.PropertyToID("_CameraDstBlend"), (float)BlendMode.Zero);
+
+                ctx.cmd.SetRenderTarget(
+                    data.dstTexture,
                     RenderBufferLoadAction.DontCare,
-                    RenderBufferStoreAction.Store,
-                    ClearFlag.None,
-                    Color.black);
+                    RenderBufferStoreAction.Store);
                 ctx.cmd.DrawProcedural(Matrix4x4.identity, material, 0, MeshTopology.Triangles, 3, 1, materialPropertyBlock);
             });
         };

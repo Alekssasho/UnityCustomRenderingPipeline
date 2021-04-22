@@ -8,7 +8,7 @@ RWTexture2D<float4> RenderTarget;
 #pragma max_recursion_depth 1
 
 float g_AspectRatio;
-uint g_FrameSeed;
+float g_FrameSeed;
 RaytracingAccelerationStructure g_AccelStructure;
 
 struct Light {
