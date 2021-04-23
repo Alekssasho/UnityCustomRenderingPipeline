@@ -2,6 +2,7 @@
 #include "../ShaderLibrary/Common.hlsl"
 #include "../ShaderLibrary/CommonPathTracing.hlsl"
 #include "../ShaderLibrary/Random.hlsl"
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Sampling/Sampling.hlsl"
 
 RWTexture2D<float4> RenderTarget;
 
@@ -46,50 +47,72 @@ void MyRaygenShader()
     ray.TMax = 1e20f;
 
     PathTracingRayPayload payload;
-
-    TraceRay(g_AccelStructure, 0, 0xFF, 0, 1, 0, ray, payload);
-
     float3 colorToWrite = 0.0;
-    if (payload.hitType == HitType::LitSurface)
-    {
-        // TODO: choose better light
-        float lightChooser = GenerateSample(randSequence);
-        uint numLights = 0;
-        uint stride = 0;
-        g_Lights.GetDimensions(numLights, stride);
-        uint choosenLightIndex = floor(lightChooser * numLights);
+    float3 througput = 1.0;
 
-        Light light = g_Lights[choosenLightIndex];
 
-        // Shadow Ray
-        RayDesc shadowRay;
-        shadowRay.Origin = payload.position;
-        shadowRay.Direction = -light.direction;
-        shadowRay.TMin = 1e-3f; // Small number to avoid self intersection
-        shadowRay.TMax = 1e20f; // TODO: This should be length to the light position.
+    while (true) {
+        TraceRay(g_AccelStructure, 0, 0xFF, 0, 1, 0, ray, payload);
 
-        PathTracingShadowRayPayload shadowRayPayload;
-        shadowRayPayload.hit = true; // Default value
+        if (payload.hitType == HitType::LitSurface)
+        {
+            // TODO: choose better light
+            float lightChooser = GenerateSample(randSequence);
+            uint numLights = 0;
+            uint stride = 0;
+            g_Lights.GetDimensions(numLights, stride);
+            uint choosenLightIndex = floor(lightChooser * numLights);
 
-        TraceRay(g_AccelStructure,
-            RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH
-            | RAY_FLAG_FORCE_OPAQUE
-            | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
-            0xFF, 0, 1, 1 /*miss index*/, shadowRay, shadowRayPayload);
+            Light light = g_Lights[choosenLightIndex];
 
-        if (!shadowRayPayload.hit) {
-            colorToWrite = payload.color
-                * saturate(dot(payload.normal, -light.direction))
-                * light.color;
+            // Shadow Ray
+            RayDesc shadowRay;
+            shadowRay.Origin = payload.position;
+            shadowRay.Direction = -light.direction;
+            shadowRay.TMin = 1e-3f; // Small number to avoid self intersection
+            shadowRay.TMax = 1e20f; // TODO: This should be length to the light position.
+
+            PathTracingShadowRayPayload shadowRayPayload;
+            shadowRayPayload.hit = true; // Default value
+
+            TraceRay(g_AccelStructure,
+                RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH
+                | RAY_FLAG_FORCE_OPAQUE
+                | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
+                0xFF, 0, 1, 1 /*miss index*/, shadowRay, shadowRayPayload);
+
+            if (!shadowRayPayload.hit) {
+                colorToWrite += througput * payload.color
+                    * saturate(dot(payload.normal, -light.direction))
+                    * light.color;
+            }
+            througput *= payload.color;
+
+            // Russian Roulette
+            float shouldContinue = GenerateSample(randSequence);
+            if (shouldContinue > max(max(througput.x, througput.y), througput.z)) {
+                break;
+            }
+
+            // BRDF Sampling
+            float u = GenerateSample(randSequence);
+            float v = GenerateSample(randSequence);
+            ray.Origin = payload.position;
+            ray.Direction = SampleHemisphereCosine(u, v, payload.normal);
+            ray.TMin = 1e-3f;
+            ray.TMax = 1e20f;
+
+            // Debug
+            //colorToWrite = light.color;
         }
-        // Debug
-        //colorToWrite = light.color;
+        else if (payload.hitType == HitType::Environment)
+        {
+            colorToWrite += througput * payload.color;
+            break;
+        }
+
     }
-    else if (payload.hitType == HitType::Environment)
-    {
-        colorToWrite = payload.color;
-    }
-   
+
     RenderTarget[launchIdx] = colorToWrite.xyzz;
 }
 
