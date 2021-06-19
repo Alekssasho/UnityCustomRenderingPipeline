@@ -9,6 +9,8 @@ public class TempestRenderPipeline : RenderPipeline
 
     }
 
+    static ShaderTagId mainOpaqueShader = new ShaderTagId("TempestMainOpaque");
+
     protected override void Render(ScriptableRenderContext context, Camera[] cameras)
     {
         foreach (Camera camera in cameras)
@@ -17,6 +19,15 @@ public class TempestRenderPipeline : RenderPipeline
             CullingResults cullingResults = context.Cull(ref p);
 
             context.SetupCameraProperties(camera);
+
+            var sortingSettings = new SortingSettings(camera)
+            {
+                criteria = SortingCriteria.CommonOpaque
+            };
+            var drawingSettings = new DrawingSettings(mainOpaqueShader, sortingSettings);
+            var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
+            context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
+            context.DrawSkybox(camera);
 
 #if UNITY_EDITOR
             DrawUnsupportedShaders(camera, context, cullingResults);
